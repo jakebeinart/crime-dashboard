@@ -1,7 +1,20 @@
 <div class="bg-gray-700">
+  <div class="mx-10 my-5">
+    <textarea
+      class="bg-white rounded-xl p-2"
+      [formControl]="queryControl"
+    ></textarea>
+    <button (click)="query()" class="ml-4 bg-gray-900 text-white rounded px-2">
+      Execute
+    </button>
+  </div>
   <div
-    class="min-h-150 m-10 rounded-2xl"
+    class="m-h-500 m-10 rounded-2xl"
     leaflet
     [leafletOptions]="options"
-  ></div>
+    [leafletLayers]="incidentMarkers"
+    (leafletMapReady)="onMapReady($event)"
+  >
+    >
+  </div>
 </div>
