@@ -6,3 +6,58 @@ body {
 a {
   color: #00B7FF;
 }
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.filter-panel {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-group label {
+  font-weight: bold;
+  color: #333;
+}
+
+.filter-group select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 200px;
+}
+.crime-popup {
+  padding: 10px;
+  max-width: 300px;
+}
+
+.crime-popup h3 {
+  margin: 0 0 10px 0;
+  color: #d32f2f;
+  font-size: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.crime-popup p {
+  margin: 5px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.crime-popup strong {
+  color: #333;
+}

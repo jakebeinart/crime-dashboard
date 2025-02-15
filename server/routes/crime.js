@@ -1,70 +1,108 @@
-// import { parseISO } from "date-fns";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const { open } = require('sqlite');
+const path = require('path');
+const router = express.Router();
 
-var express = require("express");
-var router = express.Router();
+const OFFENSE_CATEGORIES = {
+    'VIOLENT': [
+        'MURDER', 'HOMICIDE', 'ASSAULT', 'ROBBERY', 'AGGRAVATED ASSAULT',
+        'ASSAULT W/DEADLY WEAPON'
+    ],
+    'PROPERTY': [
+        'STEALING', 'THEFT', 'BURGLARY', 'LARCENY', 'AUTO THEFT',
+        'STOLEN VEHICLE', 'VANDALISM', 'PROPERTY DAMAGE'
+    ],
+    'DOMESTIC': [
+        'DOMESTIC ASSAULT', 'DOMESTIC VIOLENCE', 'VIOLATION OF PROTECTION ORDER',
+        'STALKING'
+    ],
+    'SEX CRIMES': [
+        'RAPE', 'SEXUAL ABUSE', 'SEXUAL ASSAULT', 'SODOMY', 
+        'CHILD MOLESTATION', 'STATUTORY RAPE'
+    ],
+    'DRUGS': [
+        'DRUG POSSESSION', 'DRUG DISTRIBUTION', 'DRUG PARAPHERNALIA',
+        'CONTROLLED SUBSTANCE'
+    ],
+    'WEAPONS': [
+        'WEAPONS OFFENSE', 'UNLAWFUL POSSESSION OF WEAPON', 
+        'CONCEALED WEAPON'
+    ]
+};
 
-// Function to open the database
+router.get('/', async (req, res) => {
+    const { crimeType, district, fromDate, toDate } = req.query;
+    console.log("Received query params:", { crimeType, district, fromDate, toDate });
 
-async function openDb() {
-  return open({
-    filename: "../data/database.db",
+    try {
+        const db = await openDb();
+        
+        let query = `SELECT * FROM crimes WHERE 1=1`;
+        const params = [];
 
-    driver: sqlite3.Database,
-  });
-}
+        if (crimeType && crimeType !== '') {
+            if (crimeType === 'OTHER') {
+                // Create array of all categorized offenses
+                const categorizedOffenses = Object.values(OFFENSE_CATEGORIES).flat();
+                const placeholders = categorizedOffenses.map(() => '?').join(',');
+                query += ` AND Offense NOT IN (${placeholders})`;
+                params.push(...categorizedOffenses);
+            } else {
+                // Get the offenses for the selected category
+                const categoryOffenses = OFFENSE_CATEGORIES[crimeType] || [];
+                const placeholders = categoryOffenses.map(() => '?').join(',');
+                query += ` AND Offense IN (${placeholders})`;
+                params.push(...categoryOffenses);
+            }
+        }
 
-// API endpoint to query data from the SQLite database
+        if (district && district !== '') {
+            query += ` AND District = ?`;
+            params.push(district);
+        }
 
-router.get("/", async (req, res) => {
-  const { startDate, endDate } = req.query;
+        if (fromDate && fromDate !== '') {
+            query += ` AND substr(IncidentDate, 1, 10) >= ?`;
+            params.push(fromDate);  // fromDate will already be in YYYY-MM-DD format from the input
+        }
+        
+        if (toDate && toDate !== '') {
+            query += ` AND substr(IncidentDate, 1, 10) <= ?`;
+            params.push(toDate);
+        }
+        query += ` ORDER BY IncidentDate DESC LIMIT 1000` //avoid crashing
 
-  if (!startDate || !endDate) {
-    return res
-      .status(400)
-      .json({ error: "Missing startDate or endDate query parameter" });
-  }
+        console.log("Executing query:", query);
+        console.log("With parameters:", params);
 
-  try {
-    // Parse the dates
-    // const parsedStartDate = parseISO(startDate);
-    // const parsedEndDate = parseISO(endDate);
-    const parsedStartDate = Date.parse(startDate);
-    const parsedEndDate = Date.parse(endDate);
+        const rows = await db.all(query, params);
+        console.log(`Found ${rows.length} incidents matching criteria`);
 
-    // Open the database
-    const db = await openDb();
+        await db.close();
+        res.json(rows);
 
-    // Query the database
-    const query = `
-      SELECT * FROM STLPD
-      WHERE IncidentDate >= ? AND IncidentDate <= ?
-    `;
-
-    const rows = await db.all(
-      query,
-      parsedStartDate.toISOString(),
-      parsedEndDate.toISOString()
-    );
-
-    // Close the database
-    await db.close();
-    // Return the results
-
-    res.json(rows);
-  } catch (error) {
-    console.error(error);
-
-    res
-      .status(500)
-      .json({ error: "An error occurred while querying the database" });
-  }
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ 
+            error: "Database query failed",
+            details: error.message 
+        });
+    }
 });
 
-/* GET users listing. */
-// router.get("/", function (req, res, next) {
-//   res.send("respond with a resource");
-// });
+// Don't forget to define the openDb function
+async function openDb() {
+    try {
+        const dbPath = path.resolve(__dirname, '../../data/crimes.db');
+        return await open({
+            filename: dbPath,
+            driver: sqlite3.Database
+        });
+    } catch (error) {
+        console.error("Database connection error:", error);
+        throw error;
+    }
+}
 
 module.exports = router;

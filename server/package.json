@@ -2,6 +2,7 @@
   "name": "server",
   "version": "0.0.0",
   "private": true,
+  "type": "commonjs",
   "scripts": {
     "start": "node ./bin/www"
   },
@@ -12,6 +13,7 @@
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "morgan": "~1.9.1",
+    "papaparse": "^5.5.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   }

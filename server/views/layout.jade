@@ -2,6 +2,10 @@ doctype html
 html
   head
     title= title
+    // Leaflet CSS must come before our own stylesheet
+    link(rel='stylesheet', href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css')
     link(rel='stylesheet', href='/stylesheets/style.css')
+    // Leaflet JavaScript
+    script(src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
   body
     block content
